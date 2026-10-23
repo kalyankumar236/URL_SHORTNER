@@ -1,0 +1,5 @@
+{
+  "scenario": "greenfield",
+  "requirement": "Build a URL shortener with custom aliases, link expiration, and click analytics exposed via REST APIs, with tests and documentation",
+  "taskInputs": {}
+}

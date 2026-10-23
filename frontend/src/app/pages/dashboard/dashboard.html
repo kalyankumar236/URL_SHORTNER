@@ -1,0 +1,92 @@
+<div class="page-header">
+  <div>
+    <h1>Dashboard</h1>
+    <p>Platform health across orchestration workflows, agents, gates and approvals.</p>
+  </div>
+  <div class="btn-row">
+    <button type="button" class="btn" (click)="load()">Refresh</button>
+    <a class="btn primary" routerLink="/intake">New Workflow</a>
+  </div>
+</div>
+
+@if (metrics(); as m) {
+  <div class="grid cols-4">
+    <div class="stat">
+      <div class="value">{{ num('workflows.total') }}</div>
+      <div class="label">Workflows</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ num('workflows.completionRate') | number: '1.0-0' }}%</div>
+      <div class="label">Completion rate</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ num('tasks.successRate') | number: '1.0-0' }}%</div>
+      <div class="label">Task success rate</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ num('approvals.pending') }}</div>
+      <div class="label">Pending approvals</div>
+    </div>
+  </div>
+
+  <div class="grid cols-4" style="margin-top: 1rem">
+    <div class="stat">
+      <div class="value">{{ num('tasks.totalRetries') }}</div>
+      <div class="label">Total retries</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ num('workflows.safeStops') }}</div>
+      <div class="label">Safe stops</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ num('parallelism.parallelWaves') }}</div>
+      <div class="label">Parallel waves</div>
+    </div>
+    <div class="stat">
+      <div class="value">{{ num('replanning.totalReplans') }}</div>
+      <div class="label">Replans</div>
+    </div>
+  </div>
+}
+
+<div class="card" style="margin-top: 1.25rem">
+  <div class="row-between">
+    <h3>Recent workflows</h3>
+    <span class="muted">{{ workflows().length }} shown</span>
+  </div>
+
+  @if (error()) {
+    <div class="banner error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="state"><span class="spinner"></span> Loading…</div>
+  } @else if (workflows().length === 0) {
+    <div class="state">No workflows yet. Create one from the intake form.</div>
+  } @else {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Requirement</th>
+          <th>Status</th>
+          <th>Stage</th>
+          <th>Plan</th>
+          <th>Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (w of workflows(); track w.id) {
+          <tr>
+            <td>{{ w.originalRequirement }}</td>
+            <td><app-status-badge [value]="w.status" /></td>
+            <td class="muted">{{ w.stage }}</td>
+            <td class="muted">v{{ w.planVersion }}</td>
+            <td class="muted">{{ w.updatedAt | date: 'short' }}</td>
+            <td><a [routerLink]="['/workflows', w.id]">Open</a></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

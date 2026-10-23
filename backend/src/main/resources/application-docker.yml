@@ -1,0 +1,28 @@
+# Docker/prod profile: PostgreSQL + Redis. Activated via docker-compose.
+spring:
+  config:
+    activate:
+      on-profile: docker,prod
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:agentic}
+    username: ${POSTGRES_USER:agentic}
+    password: ${POSTGRES_PASSWORD:agentic}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 5000
+      maximum-pool-size: 10
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+management:
+  health:
+    redis:
+      enabled: true
+
+app:
+  rate-limit:
+    backend: redis

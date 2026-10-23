@@ -1,0 +1,202 @@
+<div class="page-header">
+  <div>
+    <a routerLink="/dashboard" class="muted">← Dashboard</a>
+    <h1>Workflow</h1>
+    <p class="mono">{{ id }}</p>
+  </div>
+  <div class="btn-row">
+    <button type="button" class="btn" (click)="load()" [disabled]="busy()">Refresh</button>
+    <button type="button" class="btn primary" (click)="run()" [disabled]="busy()">Run</button>
+    <button type="button" class="btn" (click)="showReplan.set(!showReplan())" [disabled]="busy()">
+      Replan
+    </button>
+    <button type="button" class="btn danger" (click)="cancel()" [disabled]="busy()">Cancel</button>
+  </div>
+</div>
+
+@if (notice()) {
+  <div class="banner ok">{{ notice() }}</div>
+}
+@if (error()) {
+  <div class="banner error">{{ error() }}</div>
+}
+
+@if (showReplan()) {
+  <div class="card">
+    <h3>Replan</h3>
+    <p class="muted" style="font-size: 0.85rem">
+      Leave "from task" empty for a full replan. Provide a task name to re-run that task and all its
+      descendants while preserving unaffected completed work.
+    </p>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end">
+      <div class="field" style="margin: 0; min-width: 220px">
+        <label>From task (optional)</label>
+        <select #ft>
+          <option value="">— full replan —</option>
+          @for (n of taskNames(); track n) {
+            <option [value]="n">{{ n }}</option>
+          }
+        </select>
+      </div>
+      <div class="field" style="margin: 0; flex: 1; min-width: 220px">
+        <label>Reason</label>
+        <input #rsn type="text" placeholder="why are we replanning?" />
+      </div>
+      <button type="button" class="btn primary" (click)="replan(ft.value, rsn.value)" [disabled]="busy()">
+        Submit replan
+      </button>
+    </div>
+  </div>
+}
+
+@if (loading()) {
+  <div class="state"><span class="spinner"></span> Loading…</div>
+} @else if (workflow(); as wf) {
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Overview</h3>
+      <table class="table">
+        <tbody>
+          <tr><th>Status</th><td><app-status-badge [value]="wf.status" /></td></tr>
+          <tr><th>Stage</th><td>{{ wf.stage }}</td></tr>
+          <tr><th>Plan version</th><td>v{{ wf.planVersion }}</td></tr>
+          <tr><th>Created by</th><td>{{ wf.createdBy || '—' }}</td></tr>
+          <tr><th>Created</th><td>{{ wf.createdAt | date: 'medium' }}</td></tr>
+          <tr><th>Updated</th><td>{{ wf.updatedAt | date: 'medium' }}</td></tr>
+          <tr>
+            <th>Release readiness</th>
+            <td>
+              @if (releaseReady()) {
+                <app-status-badge value="READY" />
+              } @else {
+                <span class="muted">Not ready</span>
+              }
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Requirement</h3>
+      <p><strong>Original</strong></p>
+      <p class="muted">{{ wf.originalRequirement }}</p>
+      <p style="margin-top: 0.75rem"><strong>Normalized</strong></p>
+      <p class="muted">{{ wf.normalizedRequirement || 'Not yet normalized.' }}</p>
+    </div>
+  </div>
+
+  <!-- DAG -->
+  <div class="card">
+    <h3>Task graph (DAG)</h3>
+    @if (tasks().length === 0) {
+      <div class="state">No tasks planned yet.</div>
+    } @else {
+      <div class="dag">
+        @for (col of dagColumns(); track $index) {
+          <div class="dag-col">
+            <div class="dag-col-head">Wave {{ $index + 1 }}</div>
+            @for (t of col; track t.id) {
+              <div class="dag-node" [attr.data-status]="t.status">
+                <div class="dag-node-title">{{ t.name }}</div>
+                <div class="dag-node-meta">
+                  <app-status-badge [value]="t.status" />
+                  <app-status-badge [value]="t.risk" />
+                </div>
+                <div class="dag-node-sub muted">
+                  {{ t.agentRole }} · attempt {{ t.attempts }}/{{ t.maxAttempts }}
+                </div>
+                @if (t.errorDetail) {
+                  <div class="dag-node-err">{{ t.errorDetail }}</div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Approvals for this workflow -->
+  <div class="card">
+    <h3>Approvals</h3>
+    @if (approvals().length === 0) {
+      <div class="state">No pending approvals for this workflow.</div>
+    } @else {
+      <table class="table">
+        <thead>
+          <tr><th>Action</th><th>Risk</th><th>Requested</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (a of approvals(); track a.id) {
+            <tr>
+              <td>{{ a.actionSummary }}</td>
+              <td><app-status-badge [value]="a.risk" /></td>
+              <td class="muted">{{ a.requestedAt | date: 'short' }}</td>
+              <td>
+                <div class="btn-row">
+                  <button type="button" class="btn ok" (click)="decide(a, true)" [disabled]="busy()">
+                    Approve
+                  </button>
+                  <button type="button" class="btn danger" (click)="decide(a, false)" [disabled]="busy()">
+                    Reject
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  <div class="grid cols-2">
+    <!-- Gates -->
+    <div class="card">
+      <h3>Gates</h3>
+      @if (gates().length === 0) {
+        <div class="state">No gate results yet.</div>
+      } @else {
+        <table class="table">
+          <thead>
+            <tr><th>Gate</th><th>Outcome</th><th>When</th></tr>
+          </thead>
+          <tbody>
+            @for (g of gates(); track $index) {
+              <tr>
+                <td>{{ g.gateName }}</td>
+                <td><app-status-badge [value]="g.outcome" /></td>
+                <td class="muted">{{ g.createdAt | date: 'short' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <!-- Timeline -->
+    <div class="card">
+      <h3>Event timeline</h3>
+      @if (events().length === 0) {
+        <div class="state">No events yet.</div>
+      } @else {
+        <ul class="timeline">
+          @for (e of events(); track e.seq) {
+            <li>
+              <div class="t-head">
+                <app-status-badge [value]="e.type" />
+                <span class="muted">{{ e.createdAt | date: 'short' }}</span>
+              </div>
+              <div class="muted" style="font-size: 0.8rem">
+                {{ e.actor || 'system' }}@if (e.taskId) { · task {{ e.taskId }} }
+              </div>
+              @if (e.payloadJson) {
+                <pre class="payload">{{ prettyJson(e.payloadJson) }}</pre>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+}

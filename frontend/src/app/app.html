@@ -1,0 +1,54 @@
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <div class="brand-text">
+        <strong>Agentic SDLC Platform</strong>
+        <small>URL Shortener &amp; Orchestration Engine</small>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/intake" routerLinkActive="active">New Workflow</a>
+      <a routerLink="/approvals" routerLinkActive="active">Approvals</a>
+      <a routerLink="/links" routerLinkActive="active">Links</a>
+    </nav>
+
+    <div class="topbar-right">
+      @if (provider(); as p) {
+        <span class="provider-badge" [class.mock]="p.mock" [title]="p.model">
+          {{ p.mock ? 'MOCK LLM' : 'LIVE LLM' }} · {{ p.name }}
+        </span>
+      }
+      <button type="button" class="creds-btn" (click)="toggleCreds()">
+        {{ auth.username() || 'anonymous' }}
+      </button>
+    </div>
+
+    @if (showCreds()) {
+      <div class="creds-popover">
+        <label>
+          Admin username
+          <input #u type="text" [value]="auth.username()" autocomplete="off" />
+        </label>
+        <label>
+          Admin password
+          <input #p type="password" value="admin" autocomplete="off" />
+        </label>
+        <div class="creds-actions">
+          <button type="button" class="btn primary" (click)="saveCreds(u.value, p.value)">Save</button>
+          <button type="button" class="btn" (click)="toggleCreds()">Cancel</button>
+        </div>
+        <p class="creds-hint">
+          Used for Basic auth on mutating/admin actions. Kept in memory only (never stored).
+          Demo default: <code>admin / admin</code>.
+        </p>
+      </div>
+    }
+  </header>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

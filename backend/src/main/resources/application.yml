@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: agentic-sdlc-platform
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+  health:
+    redis:
+      enabled: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# ---------------------------------------------------------------------------
+# Application-specific configuration
+# ---------------------------------------------------------------------------
+app:
+  short:
+    base-url: ${APP_SHORT_BASE_URL:http://localhost:8080}
+    code-length: 7
+    max-url-length: 2048
+    max-alias-length: 32
+    default-redirect-status: 302
+  admin:
+    username: ${APP_ADMIN_USERNAME:admin}
+    password: ${APP_ADMIN_PASSWORD:admin}
+  rate-limit:
+    enabled: true
+    capacity: 60
+    refill-per-minute: 60
+    fail-open: true
+  analytics:
+    enabled: true
+    hash-salt: ${APP_ANALYTICS_SALT:local-dev-salt}
+    max-retries: 3
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:4200}
+  orchestration:
+    max-parallel-tasks: 4
+    default-max-attempts: 3
+    backoff-base-millis: 50
+    backoff-max-millis: 2000
+  llm:
+    provider: ${LLM_PROVIDER:mock}
+    api-key: ${LLM_API_KEY:}
+    base-url: ${LLM_API_BASE_URL:}
+    model: ${LLM_MODEL:mock-model-v1}
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [cid=%X{correlationId:-}] %-5level %logger{36} - %msg%n"

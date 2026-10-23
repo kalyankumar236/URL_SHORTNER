@@ -1,0 +1,142 @@
+<div class="page-header">
+  <div>
+    <h1>URL Shortener</h1>
+    <p>Create short links, inspect click analytics and manage link lifecycle.</p>
+  </div>
+  <button type="button" class="btn" (click)="load()">Refresh</button>
+</div>
+
+@if (notice()) {
+  <div class="banner ok">{{ notice() }}</div>
+}
+@if (error()) {
+  <div class="banner error">{{ error() }}</div>
+}
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Create link</h3>
+    <form [formGroup]="form" (ngSubmit)="create()">
+      <div class="field">
+        <label for="dest">Destination URL</label>
+        <input id="dest" formControlName="destinationUrl" placeholder="https://example.com/very/long/path" />
+        @if (form.get('destinationUrl')?.touched && form.get('destinationUrl')?.invalid) {
+          <span class="error">Enter a valid http(s) URL.</span>
+        }
+      </div>
+      <div class="field">
+        <label for="alias">Custom alias (optional)</label>
+        <input id="alias" formControlName="alias" placeholder="my-link" />
+      </div>
+      <div class="field">
+        <label for="exp">Expires at (optional)</label>
+        <input id="exp" type="datetime-local" formControlName="expiresAt" />
+      </div>
+      <button type="submit" class="btn primary" [disabled]="creating()">
+        {{ creating() ? 'Creating…' : 'Shorten URL' }}
+      </button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Top links</h3>
+    @if (summary(); as s) {
+      <div class="grid cols-2" style="margin-bottom: 0.75rem">
+        <div class="stat">
+          <div class="value">{{ s.totalClicks }}</div>
+          <div class="label">Total clicks</div>
+        </div>
+        <div class="stat">
+          <div class="value">{{ s.clicksInRange }}</div>
+          <div class="label">Clicks in range</div>
+        </div>
+      </div>
+      @if (s.topLinks.length) {
+        <table class="table">
+          <thead><tr><th>Short code</th><th>Clicks</th></tr></thead>
+          <tbody>
+            @for (t of s.topLinks; track t.shortCode) {
+              <tr><td class="mono">{{ t.shortCode }}</td><td>{{ t.clicks }}</td></tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="state">No clicks recorded yet.</div>
+      }
+    } @else {
+      <div class="state">Summary analytics require admin credentials (demo: admin/admin).</div>
+    }
+  </div>
+</div>
+
+<div class="card">
+  <h3>All links</h3>
+  @if (loading()) {
+    <div class="state"><span class="spinner"></span> Loading…</div>
+  } @else if (links().length === 0) {
+    <div class="state">No links yet. Create your first short link above.</div>
+  } @else {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Short</th>
+          <th>Destination</th>
+          <th>Status</th>
+          <th>Alias</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (l of links(); track l.shortCode) {
+          <tr>
+            <td><a [href]="l.shortUrl" target="_blank" rel="noopener" class="mono">/{{ l.shortCode }}</a></td>
+            <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
+              {{ l.destinationUrl }}
+            </td>
+            <td><app-status-badge [value]="l.status" /></td>
+            <td class="muted">{{ l.customAlias ? 'yes' : '—' }}</td>
+            <td class="muted">{{ l.createdAt | date: 'short' }}</td>
+            <td>
+              <div class="btn-row">
+                <button type="button" class="btn" (click)="viewAnalytics(l)">Analytics</button>
+                <button type="button" class="btn danger" (click)="remove(l)">Deactivate</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+@if (selected(); as a) {
+  <div class="card">
+    <div class="row-between">
+      <h3>Analytics · <span class="mono">/{{ a.shortCode }}</span></h3>
+      <button type="button" class="btn" (click)="selected.set(null)">Close</button>
+    </div>
+    <div class="grid cols-2" style="margin-bottom: 0.75rem">
+      <div class="stat">
+        <div class="value">{{ a.totalClicks }}</div>
+        <div class="label">Total clicks</div>
+      </div>
+      <div class="stat">
+        <div class="value">{{ a.clicksInRange }}</div>
+        <div class="label">Clicks in range</div>
+      </div>
+    </div>
+    @if (dailyRows(a).length) {
+      <table class="table">
+        <thead><tr><th>Day</th><th>Clicks</th></tr></thead>
+        <tbody>
+          @for (row of dailyRows(a); track row.day) {
+            <tr><td>{{ row.day }}</td><td>{{ row.clicks }}</td></tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <div class="state">No clicks recorded in this range.</div>
+    }
+  </div>
+}

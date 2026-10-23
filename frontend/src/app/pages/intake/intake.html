@@ -1,0 +1,59 @@
+<div class="page-header">
+  <div>
+    <h1>New Workflow</h1>
+    <p>Submit a requirement. The orchestrator plans a DAG of agent tasks, runs gates and pauses for approvals on high-risk actions.</p>
+  </div>
+</div>
+
+<div class="card" style="max-width: 760px">
+  @if (error()) {
+    <div class="banner error">{{ error() }}</div>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="field">
+      <label for="req">Requirement</label>
+      <textarea
+        id="req"
+        rows="4"
+        formControlName="requirement"
+        placeholder="e.g. Add a feature to let users set a custom expiration date for short links."
+      ></textarea>
+      @if (form.get('requirement')?.touched && form.get('requirement')?.invalid) {
+        <span class="error">Please describe the requirement (at least 10 characters).</span>
+      }
+    </div>
+
+    <div class="field">
+      <label>Task inputs (optional)</label>
+      <p class="muted" style="margin: 0 0 0.5rem; font-size: 0.82rem">
+        Key/value hints passed to specific tasks — e.g. <span class="mono">impl-backend.faultInjection.transientFailures = 2</span>
+        or <span class="mono">replanFromTask = architecture-design</span>.
+      </p>
+
+      <div formArrayName="inputs">
+        @for (ctrl of inputs.controls; track $index) {
+          <div [formGroupName]="$index" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem">
+            <input formControlName="key" placeholder="key" style="flex: 1" />
+            <input formControlName="value" placeholder="value" style="flex: 1" />
+            <button type="button" class="btn" (click)="removeInput($index)">✕</button>
+          </div>
+        }
+      </div>
+      <button type="button" class="btn" (click)="addInput()">+ Add input</button>
+    </div>
+
+    <div class="field">
+      <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500">
+        <input type="checkbox" formControlName="runNow" style="width: auto" />
+        Run immediately after creation
+      </label>
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn primary" [disabled]="submitting()">
+        {{ submitting() ? 'Submitting…' : 'Create workflow' }}
+      </button>
+    </div>
+  </form>
+</div>

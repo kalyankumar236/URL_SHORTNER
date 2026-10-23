@@ -1,0 +1,7 @@
+{
+  "scenario": "brownfield",
+  "requirement": "Improve URL Shortener reliability by adding bounded retries for transient analytics persistence failures, protecting against duplicate analytics events where supported, and preserving redirect availability",
+  "taskInputs": {
+    "impl-backend": "{\"faultInjection\":{\"transientFailures\":2}}"
+  }
+}

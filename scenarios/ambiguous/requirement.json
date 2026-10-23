@@ -1,0 +1,7 @@
+{
+  "scenario": "ambiguous",
+  "requirement": "Make the URL Shortener faster and more reliable",
+  "taskInputs": {},
+  "replanFromTask": "architecture-design",
+  "replanReason": "Chosen latency objective revised after human review (proposed prototype target p95 < 50ms); the design and all downstream work are invalidated and must be re-run, while the normalized requirement is preserved"
+}

@@ -1,0 +1,65 @@
+<div class="page-header">
+  <div>
+    <h1>Approvals</h1>
+    <p>Human-in-the-loop queue for high-risk actions. Approving resumes the paused workflow.</p>
+  </div>
+  <button type="button" class="btn" (click)="load()">Refresh</button>
+</div>
+
+@if (notice()) {
+  <div class="banner ok">{{ notice() }}</div>
+}
+@if (error()) {
+  <div class="banner error">{{ error() }}</div>
+}
+
+<div class="card">
+  @if (loading()) {
+    <div class="state"><span class="spinner"></span> Loading…</div>
+  } @else if (approvals().length === 0) {
+    <div class="state">No pending approvals. All clear.</div>
+  } @else {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Risk</th>
+          <th>Workflow</th>
+          <th>Requested</th>
+          <th>Reason &amp; decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of approvals(); track a.id) {
+          <tr>
+            <td>{{ a.actionSummary }}</td>
+            <td><app-status-badge [value]="a.risk" /></td>
+            <td><a [routerLink]="['/workflows', a.workflowId]">open</a></td>
+            <td class="muted">{{ a.requestedAt | date: 'short' }}</td>
+            <td>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap">
+                <input #reason type="text" placeholder="optional reason" style="min-width: 160px" />
+                <button
+                  type="button"
+                  class="btn ok"
+                  (click)="decide(a, true, reason.value)"
+                  [disabled]="busyId() === a.id"
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  class="btn danger"
+                  (click)="decide(a, false, reason.value)"
+                  [disabled]="busyId() === a.id"
+                >
+                  Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
